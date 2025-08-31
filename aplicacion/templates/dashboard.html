@@ -1,11 +1,13 @@
 {% load static %}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | GGP</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <script src="{% static 'js/chart.umd.js' %}"></script>
 </head>
 <body>
 
@@ -23,69 +25,180 @@
     </header>
 
     <div class="container dashboard">
-        <div class="user-info">
-            <h1>Hola, {{ perfil.nombre_perfil }}</h1>
-            <p>Tu ingreso mensual estimado es: **${{ perfil.ingreso_mensual_estimado|floatformat:2 }}**</p>
+        <div class="main-content-left">
+            <div class="user-info">
+                <h1>Hola, {{ perfil.nombre_perfil }}</h1>
+                <p>Tu ingreso mensual estimado es: **${{ perfil.ingreso_mensual_estimado|floatformat:2 }}**</p>
+            </div>
+            
+            <section class="summary">
+                <h2>Resumen de Finanzas</h2>
+                <div class="summary-cards">
+                    <div class="card">
+                        <h3>Balance Actual</h3>
+                        <p class="amount">${{ balance_actual|floatformat:2 }}</p>
+                    </div>
+                    <div class="card">
+                        <h3>Total Ingresos</h3>
+                        <p class="amount">${{ total_ingresos|floatformat:2 }}</p>
+                    </div>
+                    <div class="card">
+                        <h3>Total Gastos</h3>
+                        <p class="amount">${{ total_gastos|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="transactions">
+                <h2>Transacciones Recientes</h2>
+                <div class="transaction-actions">
+                    <a href="#" class="btn btn-primary">
+                        <img src="{% static 'svg/add_income.svg' %}" alt="Ingreso">
+                        Agregar Ingreso
+                    </a>
+                    <a href="#" class="btn btn-secondary">
+                        <img src="{% static 'svg/add_expense.svg' %}" alt="Gasto">
+                        Agregar Gasto
+                    </a>
+                </div>
+                <ul class="transaction-list">
+                    {% if transacciones %}
+                        {% for transaccion in transacciones %}
+                            <li class="{% if transaccion.tipo == 'ingreso' %}income-item{% else %}expense-item{% endif %}" data-transaction-id="{{ transaccion.id_str }}">
+                                <span class="trans-date">{{ transaccion.fecha_str }}</span>
+                                <span class="trans-desc">{{ transaccion.descripcion }} ({{ transaccion.categoria|default:"Sin Categoría" }})</span>
+                                <span class="trans-amount">${{ transaccion.monto|floatformat:2 }}</span>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <p>No hay transacciones registradas.</p>
+                    {% endif %}
+                </ul>
+            </section>
         </div>
 
-        <section class="summary">
-            <h2>Resumen de Finanzas</h2>
-            <div class="summary-cards">
-                <div class="card">
-                    <h3>Balance Actual</h3>
-                    <p class="amount">${{ balance_actual|floatformat:2 }}</p>
-                </div>
-                <div class="card">
-                    <h3>Total Ingresos</h3>
-                    <p class="amount">${{ total_ingresos|floatformat:2 }}</p>
-                </div>
-                <div class="card">
-                    <h3>Total Gastos</h3>
-                    <p class="amount">${{ total_gastos|floatformat:2 }}</p>
-                </div>
-            </div>
-        </section>
-
-        <section class="transactions">
-            <h2>Transacciones Recientes</h2>
-            <div class="transaction-actions">
-                <a href="#" class="btn btn-primary">
-                    <img src="{% static 'svg/add_income.svg' %}" alt="Ingreso">
-                    Agregar Ingreso
-                </a>
-                <a href="#" class="btn btn-secondary">
-                    <img src="{% static 'svg/add_expense.svg' %}" alt="Gasto">
-                    Agregar Gasto
-                </a>
-            </div>
-            <ul class="transaction-list">
-                {% if transacciones %}
-                    {% for transaccion in transacciones %}
-                        <li class="{% if transaccion.tipo == 'ingreso' %}income-item{% else %}expense-item{% endif %}">
-                            <span class="trans-date">{{ transaccion.fecha_str }}</span>
-                            <span class="trans-desc">{{ transaccion.descripcion }} ({{ transaccion.categoria|default:"Sin Categoría" }})</span>
-                            <span class="trans-amount">${{ transaccion.monto|floatformat:2 }}</span>
-                        </li>
-                    {% endfor %}
-                {% else %}
-                    <p>No hay transacciones registradas.</p>
-                {% endif %}
-            </ul>
-        </section>
-
-        <section class="category-breakdown">
-            <h2>Gastos por Categoría</h2>
-            <ul>
-                {% for categoria, monto in gastos_por_categoria.items %}
-                    <li>{{ categoria }}: ${{ monto|floatformat:2 }}</li>
-                {% endfor %}
-            </ul>
-        </section>
+        <div class="main-content-right">
+            <section class="chart-section">
+                <h2>Gastos por Categoría</h2>
+                <canvas id="pieChart"></canvas>
+            </section>
+            <section class="chart-section">
+                <h2>Ingresos y Gastos Mensuales</h2>
+                <canvas id="barChart"></canvas>
+            </section>
+        </div>
     </div>
 
+    <div id="transactionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modalTitle">Agregar Transacción</h2>
+            <form id="transactionForm" class="transaction-form">
+                {% csrf_token %}
+                <input type="hidden" id="transactionType" name="tipo">
+                <label for="amount">Monto:</label>
+                <input type="number" id="amount" name="monto" step="0.01" required>
+
+                <label for="description">Descripción:</label>
+                <input type="text" id="description" name="descripcion">
+
+                <label for="category">Categoría:</label>
+                <input type="text" id="category" name="categoria">
+
+                <button type="submit" id="submitBtn">Guardar</button>
+            </form>
+        </div>
+    </div>
+    
     <footer class="main-footer">
         <p>&copy; 2025 Gestión de Gastos Personales. Todos los derechos reservados.</p>
     </footer>
 
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        // Pasar los datos de Django a JavaScript
+        const gastosPorCategoriaStr = '{{ labels_categorias|safe|jsonify }}';
+        const montosPorCategoriaStr = '{{ data_categorias|safe|jsonify }}';
+        const labelsMesesStr = '{{ labels_meses|safe|jsonify }}';
+        const dataGastosMensualesStr = '{{ data_gastos_mensuales|safe|jsonify }}';
+        const dataIngresosMensualesStr = '{{ data_ingresos_mensuales|safe|jsonify }}';
+
+        // Usa una función para parsear de forma segura, evitando errores si la cadena está vacía
+        function safeParse(str) {
+            try {
+                return JSON.parse(str || '[]');
+            } catch (e) {
+                console.error("Error al parsear JSON:", e);
+                return [];
+            }
+        }
+        
+        const gastosPorCategoria = safeParse(gastosPorCategoriaStr);
+        const montosPorCategoria = safeParse(montosPorCategoriaStr);
+        const labelsMeses = safeParse(labelsMesesStr);
+        const dataGastosMensuales = safeParse(dataGastosMensualesStr);
+        const dataIngresosMensuales = safeParse(dataIngresosMensualesStr);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lógica para el gráfico circular
+            if (gastosPorCategoria.length > 0) {
+                const pieChartCtx = document.getElementById('pieChart').getContext('2d');
+                new Chart(pieChartCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: gastosPorCategoria,
+                        datasets: [{
+                            label: 'Gastos por Categoría',
+                            data: montosPorCategoria,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                                'rgba(255, 159, 64, 0.8)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    }
+                });
+            } else {
+                document.getElementById('pieChart').parentElement.innerHTML = '<p style="text-align: center;">No hay datos de gastos para mostrar el gráfico.</p>';
+            }
+
+            // Lógica para el gráfico de barras
+            if (labelsMeses.length > 0) {
+                const barChartCtx = document.getElementById('barChart').getContext('2d');
+                new Chart(barChartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labelsMeses,
+                        datasets: [{
+                            label: 'Gastos',
+                            data: dataGastosMensuales,
+                            backgroundColor: 'rgba(231, 76, 60, 0.8)',
+                            borderColor: 'rgba(231, 76, 60, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'Ingresos',
+                            data: dataIngresosMensuales,
+                            backgroundColor: 'rgba(46, 204, 113, 0.8)',
+                            borderColor: 'rgba(46, 204, 113, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('barChart').parentElement.innerHTML = '<p style="text-align: center;">No hay datos de ingresos y gastos para mostrar el gráfico.</p>';
+            }
+        });
+    </script>
 </body>
 </html>
