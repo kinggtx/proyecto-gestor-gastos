@@ -96,8 +96,12 @@
             <form id="transactionForm" class="transaction-form">
                 {% csrf_token %}
                 <input type="hidden" id="transactionType" name="tipo">
+
+                <label for="date">Fecha:</label>
+                <input type="date" id="date" name="fecha" required>
+
                 <label for="amount">Monto:</label>
-                <input type="number" id="amount" name="monto" step="0.01" required>
+                <input type="number" id="amount" name="monto" step="0.1" required>
 
                 <label for="description">Descripción:</label>
                 <input type="text" id="description" name="descripcion">
@@ -116,28 +120,12 @@
 
     <script src="{% static 'js/main.js' %}"></script>
     <script>
-        // Pasar los datos de Django a JavaScript
-        const gastosPorCategoriaStr = '{{ labels_categorias|safe|jsonify }}';
-        const montosPorCategoriaStr = '{{ data_categorias|safe|jsonify }}';
-        const labelsMesesStr = '{{ labels_meses|safe|jsonify }}';
-        const dataGastosMensualesStr = '{{ data_gastos_mensuales|safe|jsonify }}';
-        const dataIngresosMensualesStr = '{{ data_ingresos_mensuales|safe|jsonify }}';
-
-        // Usa una función para parsear de forma segura, evitando errores si la cadena está vacía
-        function safeParse(str) {
-            try {
-                return JSON.parse(str || '[]');
-            } catch (e) {
-                console.error("Error al parsear JSON:", e);
-                return [];
-            }
-        }
-        
-        const gastosPorCategoria = safeParse(gastosPorCategoriaStr);
-        const montosPorCategoria = safeParse(montosPorCategoriaStr);
-        const labelsMeses = safeParse(labelsMesesStr);
-        const dataGastosMensuales = safeParse(dataGastosMensualesStr);
-        const dataIngresosMensuales = safeParse(dataIngresosMensualesStr);
+        // Pasar los datos de Django directamente a JavaScript
+        const gastosPorCategoria = {{ labels_categorias|safe }};
+        const montosPorCategoria = {{ data_categorias|safe }};
+        const labelsMeses = {{ labels_meses|safe }};
+        const dataGastosMensuales = {{ data_gastos_mensuales|safe }};
+        const dataIngresosMensuales = {{ data_ingresos_mensuales|safe }};
 
         document.addEventListener('DOMContentLoaded', function() {
             // Lógica para el gráfico circular

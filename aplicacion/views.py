@@ -96,7 +96,6 @@ def dashboard(request):
     mes_actual = hoy.strftime('%Y-%m')
     
     for t in transacciones:
-        # Aquí está la corrección: crea un atributo 'id_str' sin guion bajo.
         t['id_str'] = str(t['_id']) 
         t['fecha_str'] = t['fecha'].strftime('%Y-%m-%d')
         mes_transaccion = t['fecha'].strftime('%Y-%m')
@@ -122,7 +121,7 @@ def dashboard(request):
     
     gastos_grafico = [gastos_por_mes.get(mes, 0) for mes in fechas_grafico]
     ingresos_grafico = [ingresos_por_mes.get(mes, 0) for mes in fechas_grafico]
-    
+
     context = {
         'perfil': perfil,
         'transacciones': transacciones,
@@ -138,28 +137,48 @@ def dashboard(request):
     return render(request, 'dashboard.html', context)
 
 
-
-@csrf_exempt
-@require_POST
+@csrf_exempt # Esto es solo para pruebas. No lo uses en producción sin un manejo de CSRF
 def add_transaction(request):
-    if 'user_id' not in request.session:
-        return JsonResponse({'error': 'No autorizado'}, status=401)
+    if request.method == 'POST':
+        try:
+            # Lee el cuerpo de la solicitud JSON
+            data = json.loads(request.body)
+            
+            tipo = data.get('tipo')
+            monto_str = data.get('monto')
+            descripcion = data.get('descripcion')
+            categoria = data.get('categoria')
+            fecha_str = data.get('fecha')
 
-    try:
-        data = json.loads(request.body)
-        user_id = ObjectId(request.session['user_id'])
+            # (El resto de tu lógica de validación y guardado sería la misma)
+            if not monto_str or not fecha_str:
+                return JsonResponse({'success': False, 'error': 'Monto y fecha son campos obligatorios.'}, status=400)
+            
+            try:
+                monto = float(monto_str)
+            except ValueError:
+                return JsonResponse({'success': False, 'error': 'El monto debe ser un número válido.'}, status=400)
+            
+            try:
+                fecha = datetime.strptime(fecha_str, '%Y-%m-%d')
+            except ValueError:
+                return JsonResponse({'success': False, 'error': 'El formato de la fecha no es válido.'}, status=400)
 
-        new_transaction = {
-            'usuario_id': user_id,
-            'tipo': data['tipo'],
-            'monto': float(data['monto']),
-            'descripcion': data.get('descripcion', ''),
-            'categoria': data.get('categoria', 'Sin Categoría'),
-            'fecha': datetime.now()
-        }
-        transacciones_collection.insert_one(new_transaction)
+            user_id = ObjectId(request.session['user_id'])
+            transaccion = {
+                'usuario_id': user_id,
+                'tipo': tipo,
+                'monto': monto,
+                'descripcion': descripcion,
+                'categoria': categoria,
+                'fecha': fecha
+            }
+            transacciones_collection.insert_one(transaccion)
+            
+            return JsonResponse({'success': True, 'message': 'Transacción agregada con éxito.'})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Formato JSON inválido.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-        return JsonResponse({'success': True, 'message': 'Transacción agregada con éxito'})
-
-    except (json.JSONDecodeError, KeyError, ValueError) as e:
-        return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
