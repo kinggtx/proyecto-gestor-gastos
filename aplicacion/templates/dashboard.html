@@ -4,30 +4,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Dashboard | GGP</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
+
+    <header class="main-header">
+        <a href="{% url 'dashboard' %}" class="logo">
+            <img src="{% static 'svg/logo.svg' %}" alt="Logo GGP">
+            <h1>GGP</h1>
+        </a>
+        <nav class="main-nav">
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="#">Reportes</a>
+            <a href="#">Metas de Ahorro</a>
+            <a href="{% url 'logout' %}">Cerrar Sesión</a>
+        </nav>
+    </header>
+
     <div class="container dashboard">
-        <h1>Bienvenido, {{ request.session.username }}</h1>
-        <p>Tu ingreso mensual estimado es: ${{ perfil.ingreso_mensual_estimado }}</p>
-        <hr>
-        <h2>Resumen de Finanzas</h2>
-        <p>Balance actual: **$0.00**</p>
-        <p>Ahorros: **$0.00**</p>
-        <hr>
-        <h2>Transacciones Recientes</h2>
-        {% if transacciones %}
+        <div class="user-info">
+            <h1>Hola, {{ perfil.nombre_perfil }}</h1>
+            <p>Tu ingreso mensual estimado es: **${{ perfil.ingreso_mensual_estimado|floatformat:2 }}**</p>
+        </div>
+
+        <section class="summary">
+            <h2>Resumen de Finanzas</h2>
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>Balance Actual</h3>
+                    <p class="amount">${{ balance_actual|floatformat:2 }}</p>
+                </div>
+                <div class="card">
+                    <h3>Total Ingresos</h3>
+                    <p class="amount">${{ total_ingresos|floatformat:2 }}</p>
+                </div>
+                <div class="card">
+                    <h3>Total Gastos</h3>
+                    <p class="amount">${{ total_gastos|floatformat:2 }}</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="transactions">
+            <h2>Transacciones Recientes</h2>
+            <div class="transaction-actions">
+                <a href="#" class="btn btn-primary">
+                    <img src="{% static 'svg/add_income.svg' %}" alt="Ingreso">
+                    Agregar Ingreso
+                </a>
+                <a href="#" class="btn btn-secondary">
+                    <img src="{% static 'svg/add_expense.svg' %}" alt="Gasto">
+                    Agregar Gasto
+                </a>
+            </div>
+            <ul class="transaction-list">
+                {% if transacciones %}
+                    {% for transaccion in transacciones %}
+                        <li class="{% if transaccion.tipo == 'ingreso' %}income-item{% else %}expense-item{% endif %}">
+                            <span class="trans-date">{{ transaccion.fecha_str }}</span>
+                            <span class="trans-desc">{{ transaccion.descripcion }} ({{ transaccion.categoria|default:"Sin Categoría" }})</span>
+                            <span class="trans-amount">${{ transaccion.monto|floatformat:2 }}</span>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <p>No hay transacciones registradas.</p>
+                {% endif %}
+            </ul>
+        </section>
+
+        <section class="category-breakdown">
+            <h2>Gastos por Categoría</h2>
             <ul>
-                {% for transaccion in transacciones %}
-                    <li>{{ transaccion.fecha|default:"Sin fecha" }}: {{ transaccion.descripcion }} - ${{ transaccion.monto }} ({{ transaccion.tipo }})</li>
+                {% for categoria, monto in gastos_por_categoria.items %}
+                    <li>{{ categoria }}: ${{ monto|floatformat:2 }}</li>
                 {% endfor %}
             </ul>
-        {% else %}
-            <p>Aún no hay transacciones registradas.</p>
-        {% endif %}
-        <hr>
-        <a href="{% url 'logout' %}" class="btn">Cerrar Sesión</a>
+        </section>
     </div>
+
+    <footer class="main-footer">
+        <p>&copy; 2025 Gestión de Gastos Personales. Todos los derechos reservados.</p>
+    </footer>
+
 </body>
 </html>

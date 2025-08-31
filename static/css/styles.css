@@ -54,3 +54,146 @@ button:hover {
     color: red;
     font-weight: bold;
 }
+
+body {
+    display: block;
+    height: auto;
+}
+
+.main-header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h1{
+        color: white;
+    }
+}
+.main-header .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: white;
+}
+.main-header .logo img {
+    height: 30px;
+}
+.main-nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 1.5rem;
+    transition: color 0.3s;
+}
+.main-nav a:hover {
+    color: #3498db;
+}
+
+.dashboard {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+.user-info {
+    text-align: center;
+}
+.user-info p {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+}
+
+.summary {
+    background-color: #ecf0f1;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+.summary-cards {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.card {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    flex: 1;
+    min-width: 150px;
+}
+.amount {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.transactions, .category-breakdown {
+    background-color: #ecf0f1;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+.transaction-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.3s;
+}
+.btn-primary {
+    background-color: #27ae60;
+}
+.btn-secondary {
+    background-color: #e74c3c;
+}
+.btn-primary:hover {
+    background-color: #2ecc71;
+}
+.btn-secondary:hover {
+    background-color: #c0392b;
+}
+.btn img {
+    height: 20px;
+}
+
+.transaction-list {
+    list-style: none;
+    padding: 0;
+}
+.transaction-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border-bottom: 1px solid #bdc3c7;
+}
+.transaction-list li:last-child {
+    border-bottom: none;
+}
+.income-item {
+    color: #27ae60;
+}
+.expense-item {
+    color: #e74c3c;
+}
+
+.main-footer {
+    background-color: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: 2rem;
+}
