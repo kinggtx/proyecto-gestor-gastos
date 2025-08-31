@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="container dashboard">
+        <h1>Bienvenido, {{ request.session.username }}</h1>
+        <p>Tu ingreso mensual estimado es: ${{ perfil.ingreso_mensual_estimado }}</p>
+        <hr>
+        <h2>Resumen de Finanzas</h2>
+        <p>Balance actual: **$0.00**</p>
+        <p>Ahorros: **$0.00**</p>
+        <hr>
+        <h2>Transacciones Recientes</h2>
+        {% if transacciones %}
+            <ul>
+                {% for transaccion in transacciones %}
+                    <li>{{ transaccion.fecha|default:"Sin fecha" }}: {{ transaccion.descripcion }} - ${{ transaccion.monto }} ({{ transaccion.tipo }})</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Aún no hay transacciones registradas.</p>
+        {% endif %}
+        <hr>
+        <a href="{% url 'logout' %}" class="btn">Cerrar Sesión</a>
+    </div>
+</body>
+</html>
