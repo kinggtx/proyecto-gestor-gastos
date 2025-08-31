@@ -1,4 +1,3 @@
-// static/js/main.js
 
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('transactionModal');
@@ -8,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalTitle = document.getElementById('modalTitle');
     const transactionForm = document.getElementById('transactionForm');
     const transactionType = document.getElementById('transactionType');
-    
+
     // Función para obtener el token CSRF de las cookies
     function getCookie(name) {
         let cookieValue = null;
@@ -63,23 +62,24 @@ document.addEventListener('DOMContentLoaded', function() {
         transactionForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(transactionForm);
+            // Convierte FormData a un objeto plano. Esto es lo que necesitas.
             const data = Object.fromEntries(formData.entries());
 
-            // Incluir el token CSRF en el cuerpo de la solicitud
-            data['csrfmiddlewaretoken'] = getCookie('csrftoken');
+            // Incluir el token CSRF en la solicitud
+            const csrfToken = getCookie('csrftoken');
 
             fetch('/add_transaction/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': data['csrfmiddlewaretoken']
+                    'X-CSRFToken': csrfToken // <-- Envía el token en el header, no en el cuerpo
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(data) // <-- Convierte el objeto a una cadena JSON
             })
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    alert(result.message);
+                    alert(result.message || 'Transacción agregada con éxito!');
                     modal.style.display = 'none';
                     // Recargar la página para ver los cambios
                     location.reload(); 
